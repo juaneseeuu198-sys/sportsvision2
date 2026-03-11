@@ -1,0 +1,216 @@
+{% extends 'base/base.html' %}
+{% block title %}Entrenamiento — {{ ejercicio_actual.ejercicio.nombre }}{% endblock %}
+
+{% block content %}
+<div class="sv-page-content workout-page">
+
+  <!-- HEADER -->
+  <div class="workout-header">
+    <span class="workout-started">
+      <i class="bi bi-circle-fill text-success"></i>
+      Iniciado a las {{ entrenamiento.iniciado_en|time:"H:i" }}
+    </span>
+    <form method="post" style="display:inline;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="terminar_entrenamiento">
+      <button type="submit" class="btn-abandon">
+        <i class="bi bi-x-circle"></i> Abandonar entrenamiento
+      </button>
+    </form>
+  </div>
+
+  <!-- STATS -->
+  <div class="workout-stats-grid">
+    <div class="stat-panel">
+      <div class="stat-label"><span class="dot dot-green"></span> Progreso</div>
+      <div class="stat-value">{{ progreso_pct }}%</div>
+      <div class="progress sv-progress mt-2">
+        <div class="progress-bar bg-success" style="width:{{ progreso_pct }}%"></div>
+      </div>
+      <div class="stat-sub">{{ ejercicio_idx }}/{{ ejercicios_list|length }} completados</div>
+    </div>
+    <div class="stat-panel">
+      <div class="stat-label"><span class="dot dot-orange"></span> Peso Total</div>
+      <div class="stat-value">{{ peso_total }}</div>
+      <div class="stat-sub">kg levantados</div>
+    </div>
+  </div>
+
+  <!-- EXERCISE TIMELINE -->
+  <div class="exercise-timeline">
+    {% for ej_rutina in ejercicios_list %}
+    <div class="timeline-item {% if forloop.counter0 < ejercicio_idx %}done{% elif forloop.counter0 == ejercicio_idx %}current{% endif %}">
+      <div class="timeline-dot {% if forloop.counter0 < ejercicio_idx %}done{% elif forloop.counter0 == ejercicio_idx %}current{% endif %}">
+        {% if forloop.counter0 < ejercicio_idx %}<i class="bi bi-check-lg"></i>{% endif %}
+      </div>
+      <div class="timeline-content {% if forloop.counter0 == ejercicio_idx %}active{% endif %}">
+        <div class="ex-header">
+          <div class="ex-workout-thumb">
+            {% if ej_rutina.ejercicio.gif %}
+              <img src="{{ ej_rutina.ejercicio.gif.url }}" alt="">
+            {% elif ej_rutina.ejercicio.imagen %}
+              <img src="{{ ej_rutina.ejercicio.imagen.url }}" alt="">
+            {% else %}
+              <div class="img-slot-sm"><i class="bi bi-image"></i></div>
+            {% endif %}
+          </div>
+          <div>
+            <h4 class="ex-workout-name">{{ ej_rutina.ejercicio.nombre }}</h4>
+            <a href="{% url 'ejercicio_detalle' ej_rutina.ejercicio.id %}" target="_blank" class="ex-instructions-link">
+              Ver Instrucciones
+            </a>
+          </div>
+        </div>
+
+        {% if forloop.counter0 == ejercicio_idx %}
+        <!-- SETS FORM (solo ejercicio activo) -->
+        {% for serie in series %}
+        <div class="set-panel completed-set">
+          <div class="set-header">
+            <span class="set-badge">SET{{ serie.numero_serie }}</span>
+            <span class="set-complete"><i class="bi bi-check-circle-fill text-success"></i></span>
+          </div>
+          <div class="set-detail">
+            {% if serie.repeticiones %}<span><i class="bi bi-arrow-repeat"></i> {{ serie.repeticiones }} reps</span>{% endif %}
+            {% if serie.peso %}<span><i class="bi bi-bar-chart-fill"></i> {{ serie.peso }} kg</span>{% endif %}
+            {% if serie.tiempo_minutos %}<span><i class="bi bi-stopwatch"></i> {{ serie.tiempo_minutos }}:{% if serie.tiempo_segundos %}{% if serie.tiempo_segundos < 10 %}0{% endif %}{{ serie.tiempo_segundos }}{% else %}00{% endif %}</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+
+        <!-- NEW SET FORM -->
+        <form method="post" id="serieForm">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="guardar_serie">
+          <div class="set-panel new-set">
+            <div class="set-header">
+              <span class="set-badge">SET{{ series|length|add:1 }}</span>
+              <i class="bi bi-trash-fill" style="color:var(--sv-red);cursor:pointer;"></i>
+            </div>
+
+            <!-- Repeticiones -->
+            <div class="set-field-group">
+              <div class="set-field-header">
+                <span>Repeticiones</span>
+                <button type="button" class="btn-toggle-field" onclick="toggleField('reps-fields')">∨</button>
+                <button type="button" class="set-minus-btn" onclick="removeAttr('reps-fields')"><i class="bi bi-dash-square-fill"></i></button>
+              </div>
+              <div id="reps-fields">
+                {{ form.repeticiones }}
+              </div>
+            </div>
+
+            <!-- Peso -->
+            <div class="set-field-group">
+              <div class="set-field-header">
+                <span>Peso</span>
+                <button type="button" class="btn-toggle-field" onclick="toggleField('peso-fields')">∨</button>
+                <button type="button" class="set-minus-btn" onclick="removeAttr('peso-fields')"><i class="bi bi-dash-square-fill"></i></button>
+              </div>
+              <div id="peso-fields">
+                <div class="d-flex gap-2">
+                  {{ form.peso }}
+                  <span class="input-unit-badge">Kg</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tiempo (oculto por defecto) -->
+            <div class="set-field-group" id="tiempo-group" style="display:none;">
+              <div class="set-field-header">
+                <span>Tiempo</span>
+                <button type="button" class="btn-toggle-field" onclick="toggleField('tiempo-fields')">∨</button>
+                <button type="button" class="set-minus-btn" onclick="removeAttr('tiempo-group')"><i class="bi bi-dash-square-fill"></i></button>
+              </div>
+              <div id="tiempo-fields">
+                <div class="d-flex gap-2">
+                  {{ form.tiempo_minutos }}
+                  {{ form.tiempo_segundos }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Peso corporal (oculto por defecto) -->
+            <div class="set-field-group" id="pc-group" style="display:none;">
+              <div class="set-field-header">
+                <span>Peso Corporal</span>
+                <button type="button" class="set-minus-btn" onclick="removeAttr('pc-group')"><i class="bi bi-dash-square-fill"></i></button>
+              </div>
+              <div class="d-flex gap-2">
+                {{ form.peso_corporal }}
+                <span class="input-unit-badge">Kg</span>
+              </div>
+            </div>
+
+            <!-- Add attribute buttons -->
+            <button type="button" class="btn-add-attr" onclick="toggleAttr('tiempo-group')">
+              <i class="bi bi-plus-circle"></i> Agregar Tiempo
+            </button>
+            <button type="button" class="btn-add-attr" onclick="toggleAttr('pc-group')">
+              <i class="bi bi-plus-circle"></i> Peso Corporal
+            </button>
+            <button type="submit" class="btn-finish-set">Terminar Serie</button>
+          </div>
+        </form>
+
+        <!-- Navigation buttons -->
+        <form method="post" class="mt-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="guardar_serie">
+          <button type="button" class="btn-add-set w-100" onclick="document.getElementById('serieForm').submit()">
+            Agregar Serie
+          </button>
+        </form>
+
+        <form method="post" class="mt-2">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="siguiente_ejercicio">
+          {% if es_ultimo %}
+          <button type="submit" class="btn-sv-green w-100 py-3">
+            <i class="bi bi-check-circle-fill"></i> Terminar Entrenamiento
+          </button>
+          {% else %}
+          <button type="submit" class="btn-next-exercise w-100">
+            Siguiente Ejercicio <i class="bi bi-arrow-right"></i>
+          </button>
+          {% endif %}
+        </form>
+
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+    {% if ejercicio_idx >= ejercicios_list|length %}
+    <div class="text-center py-4">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="terminar_entrenamiento">
+        <button type="submit" class="btn-sv-green px-5 py-3 fs-5">
+          <i class="bi bi-trophy-fill"></i> Terminar Entrenamiento
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function toggleField(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function removeAttr(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  }
+
+  function toggleAttr(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+</script>
+{% endblock %}

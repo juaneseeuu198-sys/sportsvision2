@@ -1,0 +1,84 @@
+{% extends 'base/base.html' %}
+{% block title %}Tu Progreso — SportsVision{% endblock %}
+
+{% block content %}
+<div class="sv-page-content">
+  <!-- Header -->
+  <div class="calendar-header">
+    <a href="?year={{ prev_year }}&month={{ prev_month }}" class="cal-nav-btn">
+      &lt;&lt;&lt; {{ prev_year }}/{{ prev_month }}
+    </a>
+    <h1 class="calendar-title">{{ mes_nombre }} {{ year }}</h1>
+    <a href="?year={{ next_year }}&month={{ next_month }}" class="cal-nav-btn">
+      {{ next_year }}/{{ next_month }} &gt;&gt;&gt;
+    </a>
+  </div>
+
+  <!-- Calendar grid -->
+  <div class="calendar-grid">
+    <div class="cal-days-header">
+      <div class="cal-day-name">Lunes</div>
+      <div class="cal-day-name">Martes</div>
+      <div class="cal-day-name">Miercoles</div>
+      <div class="cal-day-name">Jueves</div>
+      <div class="cal-day-name">Viernes</div>
+      <div class="cal-day-name">Sabado</div>
+      <div class="cal-day-name">Domingo</div>
+    </div>
+
+    <div class="cal-body">
+      {% for week in calendario %}
+        {% for day in week %}
+        <div class="cal-cell {% if day > 0 and day in dias_con_entrenamiento %}has-workout{% endif %} {% if day == dia_sel %}selected-day{% endif %}"
+             {% if day > 0 %}
+             onclick="window.location='?year={{ year }}&month={{ month }}&dia={{ day }}'"
+             {% endif %}>
+          {% if day > 0 %}
+            {% if day in dias_con_entrenamiento %}
+              <span class="cal-dot dot-purple"></span>
+            {% else %}
+              <span class="cal-dot dot-outline"></span>
+            {% endif %}
+            <span class="cal-number">{{ day }}</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Day detail popup -->
+  {% if dia_sel %}
+  <div class="day-detail-panel mt-4">
+    <h5 class="sv-panel-title">{{ dia_sel }} de {{ mes_nombre }}</h5>
+    {% if entrenamientos_dia %}
+      {% for ent in entrenamientos_dia %}
+      <div class="day-workout-card mb-3">
+        <h6 style="color:var(--sv-purple-light);">Ejercicios Realizados</h6>
+        {% regroup ent.series.all by ejercicio as series_by_ex %}
+        {% for group in series_by_ex %}
+        <div class="day-exercise mb-2">
+          <strong>{{ group.grouper.nombre }}</strong>
+          {% if group.grouper.grupo_muscular %}
+          <span class="muscle-tag">{{ group.grouper.grupo_muscular.nombre }}</span>
+          {% endif %}
+          <br>
+          <small style="color:#888;">series: {{ group.list|length }}</small>
+          {% for serie in group.list %}
+          <div class="day-serie">
+            Serie {{ serie.numero_serie }}:
+            {% if serie.repeticiones %}{{ serie.repeticiones }} reps{% endif %}
+            {% if serie.peso %}× {{ serie.peso }} kg{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="no-workout-msg">No has hecho nada este dia</div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

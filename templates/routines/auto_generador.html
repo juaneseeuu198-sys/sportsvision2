@@ -1,0 +1,87 @@
+{% extends 'base/base.html' %}
+{% block title %}Auto Generador — SportsVision{% endblock %}
+
+{% block content %}
+<div class="sv-page-content">
+  <h1 class="sv-page-title">Auto generador de rutinas</h1>
+
+  <form method="post">
+    {% csrf_token %}
+    <!-- Equipment -->
+    <div class="equipment-grid mb-4">
+      {% for equipo in equipos %}
+      <label class="equip-card" for="ag_eq_{{ equipo.id }}">
+        <input type="checkbox" name="equipos" value="{{ equipo.id }}"
+               id="ag_eq_{{ equipo.id }}" class="equip-checkbox" hidden>
+        <span class="sel-dot"></span>
+        <div class="equip-img">
+          {% if equipo.imagen %}
+            <img src="{{ equipo.imagen.url }}" alt="{{ equipo }}">
+          {% else %}
+            <div class="img-slot"><i class="bi bi-image"></i><p>{{ equipo }}</p></div>
+          {% endif %}
+        </div>
+        <span class="equip-label">{{ equipo }}</span>
+      </label>
+      {% endfor %}
+    </div>
+
+    <p class="text-center mb-4" style="color:#aaa;font-weight:700;">
+      Auto genera tu rutina con los implementos a tu alcance
+    </p>
+
+    <div class="sv-panel">
+      <label class="sv-label mb-3">Tu nivel de entrenamiento</label>
+      <div class="level-select">
+        <label class="level-btn-label">
+          <input type="radio" name="nivel" value="principiante" checked hidden class="level-radio">
+          <span class="level-btn">Principiante</span>
+        </label>
+        <label class="level-btn-label">
+          <input type="radio" name="nivel" value="intermedio" hidden class="level-radio">
+          <span class="level-btn">Intermedio</span>
+        </label>
+        <label class="level-btn-label">
+          <input type="radio" name="nivel" value="avanzado" hidden class="level-radio">
+          <span class="level-btn">Avanzado</span>
+        </label>
+      </div>
+
+      <div class="mt-4">
+        <label class="sv-label">Numero de ejercicios: <span id="numLabel" style="color:#60a5fa;">5</span></label>
+        <input type="range" class="sv-range" name="num_ejercicios" min="3" max="12" value="5"
+               oninput="document.getElementById('numLabel').textContent=this.value">
+      </div>
+
+      <div class="gen-summary mt-3">
+        <p>Rutina: <span id="sumEj">5</span> ejercicios</p>
+        <p>Serie: <span>3</span></p>
+        <p>Repeticiones: <span>12</span></p>
+      </div>
+
+      <button type="submit" class="btn-sv-green w-100 py-3 mt-3 fs-5">
+        <i class="bi bi-lightning-fill"></i> Comenzar a generar
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.equip-checkbox').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('.equip-card').classList.toggle('selected', cb.checked);
+    });
+  });
+  document.querySelectorAll('.level-radio').forEach(r => {
+    r.addEventListener('change', () => {
+      document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+      r.nextElementSibling.classList.add('active');
+    });
+  });
+  document.querySelector('[name="num_ejercicios"]').addEventListener('input', e => {
+    document.getElementById('sumEj').textContent = e.target.value;
+  });
+</script>
+{% endblock %}

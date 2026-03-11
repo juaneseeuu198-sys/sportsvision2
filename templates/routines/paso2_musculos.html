@@ -1,0 +1,52 @@
+{% extends 'base/base.html' %}
+{% block title %}Nueva Rutina — Músculos{% endblock %}
+
+{% block content %}
+<div class="sv-page-content">
+  {% include 'routines/step_header.html' with paso_actual=2 %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="muscles-container">
+      <!-- Diagrama del cuerpo: reemplaza con imagen/SVG interactivo -->
+      <div class="muscle-diagram-wrap">
+        <div class="img-slot muscle-diagram-slot">
+          <i class="bi bi-person-standing" style="font-size:80px;"></i>
+          <p>DIAGRAMA MUSCULAR<br><small>Reemplaza con imagen/SVG del cuerpo con áreas clickeables</small></p>
+        </div>
+      </div>
+
+      <!-- Grupos musculares como botones -->
+      <div class="muscle-buttons">
+        <h5 class="mb-3" style="color:#aaa;">Selecciona grupos musculares:</h5>
+        <div class="d-flex flex-wrap gap-2">
+          {% for grupo in grupos %}
+          <label class="muscle-btn-label" for="gm_{{ grupo.id }}">
+            <input type="checkbox" name="grupos" value="{{ grupo.id }}"
+                   id="gm_{{ grupo.id }}" hidden class="muscle-check">
+            <span class="muscle-btn">{{ grupo.nombre }}</span>
+          </label>
+          {% empty %}
+          <p class="text-muted">No hay grupos musculares. <a href="/admin/exercises/grupomuscular/">Agregar en el admin</a></p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="step-nav-footer">
+      <a href="{% url 'paso1_equipo' %}" class="btn-sv-back"><i class="bi bi-arrow-left"></i></a>
+      <button type="submit" class="btn-sv-next"><i class="bi bi-arrow-right"></i></button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.muscle-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.nextElementSibling.classList.toggle('active', cb.checked);
+    });
+  });
+</script>
+{% endblock %}
